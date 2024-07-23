@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forgot Password</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Forgot Password</h2>
+        <form id="forgot-password-form">
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            <button type="submit">Submit</button>
+            <p id="message" class="message"></p>
+            <p id="token-display" class="message"></p> <!-- Token display -->
+        </form>
+        <a href="RP.html">Back to Reset Password</a><br>
+        <a href="index.html">Back to Home</a>
+    </div>
+    <script>
+        document.getElementById('forgot-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const messageElement = document.getElementById('message');
+            const tokenDisplay = document.getElementById('token-display'); // Token display element
+
+            try {
+                const response = await fetch('http://localhost:3001/api/v1/auth/forgot-password', { // Update URL as necessary
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageElement.style.color = '#28a745'; // Green for success
+                    messageElement.textContent = 'Password reset token generated.';
+                    tokenDisplay.style.color = '#007bff'; // Blue for token
+                    tokenDisplay.textContent = `Token: ${data.token}`;
+                } else {
+                    messageElement.style.color = '#d9534f'; // Red for error
+                    messageElement.textContent = data.message || 'An error occurred';
+                    tokenDisplay.textContent = ''; // Clear token display
+                }
+            } catch (error) {
+                messageElement.style.color = '#d9534f'; // Red for error
+                messageElement.textContent = 'Error: ' + error.message;
+                tokenDisplay.textContent = ''; // Clear token display
+            }
+        });
+    </script>
+</body>
+</html>

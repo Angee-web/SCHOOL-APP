@@ -7,7 +7,14 @@ const studentRoute = require("./routes/studentRoutes");
 const authRoutes = require("./routes/authRoutes");
 const courseRoutes = require("./routes/courseRoutes");
 const instructorRoutes = require("./routes/instructorRoutes");
-
+const {
+    verifyToken,
+    isStudent,
+    isInstructor,
+} = require("./middlewares/authMiddlewares");
+const path = require("path");
+const bodyParser = require("body-parser");
+const cors = require('cors');
 
 
 // create instance 2
@@ -20,7 +27,12 @@ db.on("error", (error) => console.log(error));
 db.once("open", () => console.log("Connected to database"));
 
 // use middlewares 5
+app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, "public")));
 
 // welcome message when visiting the app interface
 const welcomeMessage = (req, res, next) => {
@@ -63,11 +75,13 @@ app.post("/about", (req, res) => {
 
 // register auth route
 app.use("/api/v1", authRoutes);
+// use the student route 25
+app.use("/api/v1", verifyToken, isStudent, studentRoute);
 // register instructor route
-app.use("/api/v1", instructorRoutes);
+app.use("/api/v1", verifyToken, isInstructor, instructorRoutes);
+// re
 // register course route
 app.use("/api/v1", courseRoutes);
-// use the student route 25
-app.use("/api/v1", studentRoute);
+
 
 // execute after all action has been executed

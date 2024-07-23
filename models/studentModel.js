@@ -28,7 +28,7 @@ const studentSchema = new Schema({
         type: String,
         required: true,
     },
-    courses: {
+    course: {
         type: [mongoose.Schema.Types.ObjectId],
         required: true,
     },
@@ -45,6 +45,10 @@ const studentSchema = new Schema({
     createdAt: {
         type: Date,
         defualt: Date.now,
+    },
+    role:{
+        type: String,
+        default: "student",
     }
 });
 
