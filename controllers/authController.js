@@ -317,74 +317,82 @@ exports.registerForCourse = async (req, res) => {
 
 
 // This function handles the "forgot password" process by generating a token that allows the user to reset their password. 
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Please provide an email address" });
+  }
+
+  try {
+    const user = await Student.findOne({ email }) || await Instructor.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const token = jwt.sign({ id: user._id }, process.env.RESET_PASSWORD_SECRET_KEY, { expiresIn: "1h" });
+
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      host: "smtp.gmail.com",
+      port: 465,  // This port is for the Gmail SMTP server
+      secure: true,
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email, // Use the provided email from the request body
+      subject: 'Password Reset Request',
+      text: `You requested for a password reset. Please use the following token to reset your password: ${token}`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).json({ message: error.message });
+      } else {
+        return res.status(200).json({ message: "Password reset token sent to email" });
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+
+// This function handles the "forgot password" process by generating a token that allows the user to reset their password. For now, it logs the token to the console instead of sending it via email. It works when the user is not logged in
 // exports.forgotPassword = async (req, res) => {
+//   // The email is destructured from the request body.
 //   const { email } = req.body;
 
-//   if (!email) {
-//     return res.status(400).json({ message: "Please provide an email address" });
-//   }
-
 //   try {
+//     // Find the user by email
 //     const user = await Student.findOne({ email }) || await Instructor.findOne({ email });
 
+//     // if no user is found with the provided email, it responds with a 404 status and a message indicating the user was not found.
 //     if (!user) {
-//       return res.status(404).json({ message: "User not found" });
+//       return res.status(404).json({ message: "user not found" });
 //     }
 
+//     // Generate the token with the student's ID and with the secret key in the env file and set to expire in an hour
 //     const token = jwt.sign({ id: user._id }, process.env.RESET_PASSWORD_SECRET_KEY, { expiresIn: "1h" });
 
-//     const transporter = nodemailer.createTransport({
-//       service: 'gmail',
-//       auth: {
-//         user: process.env.EMAIL,
-//         pass: process.env.EMAIL_PASSWORD,
-//       },
-//     });
+//     // Log the token to the console instead of sending an email (still figuring out)
+//     console.log(`Password reset token for ${email}: ${token}`);
 
-//     const mailOptions = {
-//       from: process.env.EMAIL,
-//       to: 'adaezeugwumba662@gmail.com',
-//       subject: 'Password Reset Request',
-//       text: `You requested for a password reset. Please use the following token to reset your password: ${token}`,
-//     };
+//     // Respond with a success message if successful
+//     res.status(200).json({token, message: "Password reset token generated. Check console for the token." });
 
-//     await transporter.sendMail(mailOptions);
-
-//     res.status(200).json({ message: "Password reset token sent to email" });
+// // catch any error
 //   } catch (error) {
+//     console.error("Error in forgotPassword:", error);
 //     res.status(500).json({ message: error.message });
 //   }
 // };
-
-// This function handles the "forgot password" process by generating a token that allows the user to reset their password. For now, it logs the token to the console instead of sending it via email. It works when the user is not logged in
-exports.forgotPassword = async (req, res) => {
-  // The email is destructured from the request body.
-  const { email } = req.body;
-
-  try {
-    // Find the user by email
-    const user = await Student.findOne({ email }) || await Instructor.findOne({ email });
-
-    // if no user is found with the provided email, it responds with a 404 status and a message indicating the user was not found.
-    if (!user) {
-      return res.status(404).json({ message: "user not found" });
-    }
-
-    // Generate the token with the student's ID and with the secret key in the env file and set to expire in an hour
-    const token = jwt.sign({ id: user._id }, process.env.RESET_PASSWORD_SECRET_KEY, { expiresIn: "1h" });
-
-    // Log the token to the console instead of sending an email (still figuring out)
-    console.log(`Password reset token for ${email}: ${token}`);
-
-    // Respond with a success message if successful
-    res.status(200).json({token, message: "Password reset token generated. Check console for the token." });
-
-// catch any error
-  } catch (error) {
-    console.error("Error in forgotPassword:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
 
 
 // function to reset passwoed  using a token generated after forget password function 
