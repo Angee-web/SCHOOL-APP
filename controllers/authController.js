@@ -10,6 +10,8 @@ dotenv.config();
 const nodemailer = require("nodemailer");
 const otpGenerator = require("otp-generator");
 
+// Temporary storage for OTPs 
+let otpStore = {};
 
 // Function to create an account depending on the status of the user
 exports.createAccount = async (req, res) => {
@@ -309,59 +311,52 @@ exports.registerForCourse = async (req, res) => {
   }
 };
 
-
-// 
-// exports.generateOTP = async (req, res) => {
-//   let OTP = await otpGenerator.generate(6, {lowerCaseAlphabets: false, upperCaseAlphabets: false, speacialChar: false});
-// }
-
-
 // This function handles the "forgot password" process by generating a token that allows the user to reset their password. 
-exports.forgotPassword = async (req, res) => {
-  const { email } = req.body;
+// exports.forgotPassword = async (req, res) => {
+//   const { email } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ message: "Please provide an email address" });
-  }
+//   if (!email) {
+//     return res.status(400).json({ message: "Please provide an email address" });
+//   }
 
-  try {
-    const user = await Student.findOne({ email }) || await Instructor.findOne({ email });
+//   try {
+//     const user = await Student.findOne({ email }) || await Instructor.findOne({ email });
 
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
 
-    const token = jwt.sign({ id: user._id }, process.env.RESET_PASSWORD_SECRET_KEY, { expiresIn: "1h" });
+//     const token = jwt.sign({ id: user._id }, process.env.RESET_PASSWORD_SECRET_KEY, { expiresIn: "1h" });
 
-    const transporter = nodemailer.createTransport({
-      service: 'Gmail',
-      host: "smtp.gmail.com",
-      port: 465,  // This port is for the Gmail SMTP server
-      secure: true,
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
+//     const transporter = nodemailer.createTransport({
+//       service: 'Gmail',
+//       host: "smtp.gmail.com",
+//       port: 465,  // This port is for the Gmail SMTP server
+//       secure: true,
+//       auth: {
+//         user: process.env.EMAIL,
+//         pass: process.env.EMAIL_PASSWORD,
+//       },
+//     });
 
-    const mailOptions = {
-      from: process.env.EMAIL,
-      to: email, // Use the provided email from the request body
-      subject: 'Password Reset Request',
-      text: `You requested for a password reset. Please use the following token to reset your password: ${token}`,
-    };
+//     const mailOptions = {
+//       from: process.env.EMAIL,
+//       to: email, // Use the provided email from the request body
+//       subject: 'Password Reset Request',
+//       text: `You requested for a password reset. Please use the following token to reset your password: ${token}`,
+//     };
 
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        return res.status(500).json({ message: error.message });
-      } else {
-        return res.status(200).json({ message: "Password reset token sent to email" });
-      }
-    });
-  } catch (error) {
-    return res.status(500).json({ message: error.message });
-  }
-};
+//     transporter.sendMail(mailOptions, (error, info) => {
+//       if (error) {
+//         return res.status(500).json({ message: error.message });
+//       } else {
+//         return res.status(200).json({ message: "Password reset token sent to email" });
+//       }
+//     });
+//   } catch (error) {
+//     return res.status(500).json({ message: error.message });
+//   }
+// };
 
 
 // This function handles the "forgot password" process by generating a token that allows the user to reset their password. For now, it logs the token to the console instead of sending it via email. It works when the user is not logged in
@@ -396,37 +391,126 @@ exports.forgotPassword = async (req, res) => {
 
 
 // function to reset passwoed  using a token generated after forget password function 
-exports.resetPassword = async (req, res) => {
-  // destructure the token and the new password from the request body
-  const { token, newPassword } = req.body;
+// exports.resetPassword = async (req, res) => {
+//   // destructure the token and the new password from the request body
+//   const { token, newPassword } = req.body;
   
-  // check if both token and new password are provided. If not, it responds with a 400 status
-  if (!token || !newPassword) {
-    return res.status(400).json({ message: "Please provide a token and a new password" });
-  }
+//   // check if both token and new password are provided. If not, it responds with a 400 status
+//   if (!token || !newPassword) {
+//     return res.status(400).json({ message: "Please provide a token and a new password" });
+//   }
   
-  // Verify that the token is using the secret key. If the token is valid, it decodes the token to retrieve the user ID.
-  try {
-    const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET_KEY);
+//   // Verify that the token is using the secret key. If the token is valid, it decodes the token to retrieve the user ID.
+//   try {
+//     const decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET_KEY);
     
-    // find a user with the decoded ID in either the Student or Instructor collections.
-    let user = await Student.findById(decoded.id) || await Instructor.findById(decoded.id);
+//     // find a user with the decoded ID in either the Student or Instructor collections.
+//     let user = await Student.findById(decoded.id) || await Instructor.findById(decoded.id);
 
-    // response if no user is found with the ID
+//     // response if no user is found with the ID
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // hash the new password using bcypt with salt of 10
+//     const hashedPassword = await bcrypt.hash(newPassword, 10);
+//     user.password = hashedPassword;
+//     await user.save();
+
+//     // responds with a success message indicating the password was reset successfully.
+//     res.status(200).json({ message: "Password reset successfully" });
+//   } 
+//   // catches any errors during the process, responds with a 500 status and the error message.
+//   catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
+
+// Function to handle forgot password and send OTP
+exports.forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Please provide an email address" });
+  }
+
+  try {
+    const user = await Student.findOne({ email }) || await Instructor.findOne({ email });
+
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // hash the new password using bcypt with salt of 10
+    // Generate OTP
+    const otp = otpGenerator.generate(6, { digits: true, alphabets: false, upperCase: false, specialChars: false });
+    
+    // Store OTP with expiration time (e.g., 10 minutes)
+    otpStore[email] = { otp, expiresAt: Date.now() + 10 * 60 * 1000 };
+
+    // Configure Nodemailer transporter
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: {
+        user: process.env.EMAIL,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    // Email options
+    const mailOptions = {
+      from: process.env.EMAIL,
+      to: email,
+      subject: 'Password Reset OTP',
+      text: `Your OTP for password reset is: ${otp}. It is valid for 10 minutes.`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        return res.status(500).json({ message: error.message });
+      }
+      res.status(200).json({ message: "OTP sent to email" });
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// Function to handle password reset using OTP
+exports.resetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res.status(400).json({ message: "Please provide email, OTP, and new password" });
+  }
+
+  try {
+    // Verify OTP
+    const otpEntry = otpStore[email];
+    if (!otpEntry || otpEntry.otp !== otp || Date.now() > otpEntry.expiresAt) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    // Find the user by e  mail
+    let user = await Student.findOne({ email }) || await Instructor.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Hash new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
 
-    // responds with a success message indicating the password was reset successfully.
+    // Remove OTP after successful password reset
+    delete otpStore[email];
+
     res.status(200).json({ message: "Password reset successfully" });
-  } 
-  // catches any errors during the process, responds with a 500 status and the error message.
-  catch (error) {
+  } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };

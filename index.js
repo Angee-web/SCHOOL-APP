@@ -17,12 +17,12 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 
 
-// create instance 2
+// create instance 2hhhhhhhhhh
 const app = express();
 // assign port 3
 const port = 3001;
 
-// turn on the connection to the db 12
+// turn on the connection to the db 12ffffffff
 db.on("error", (error) => console.log(error));
 db.once("open", () => console.log("Connected to database"));
 
