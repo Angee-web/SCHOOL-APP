@@ -27,7 +27,7 @@ db.on("error", (error) => console.log(error));
 db.once("open", () => console.log("Connected to database"));
 
 // use middlewares 5
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));

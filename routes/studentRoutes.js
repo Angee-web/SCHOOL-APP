@@ -14,9 +14,7 @@ const getOneStudentMiddleWare = (req, res, next) => {
 // implement all the methods here via the route 22
 router.post("/student", studentController.createStudent);
 
-
-
-router.get("/student", studentController.getStudent);
+router.get("/student", studentController.getStudents);
 
 router.get("/student/:studentId",getOneStudentMiddleWare, studentController.getOneStudent)
 

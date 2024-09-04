@@ -19,7 +19,7 @@ exports.createStudent = async (req, res) => {
     }
 };
 
-exports.getStudent = async (req,res) => {
+exports.getStudents = async (req,res) => {
     try {
         const student = await Student.find();
         res.status(201).send({
