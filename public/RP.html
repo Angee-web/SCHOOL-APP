@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Reset Password</h2>
+        <form id="reset-password-form">
+            <div class="form-group">
+                <label for="token">Token:</label>
+                <input type="text" id="token" name="token" required>
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password:</label>
+                <input type="password" id="newPassword" name="newPassword" required>
+            </div>
+            <button type="submit">Submit</button>
+            <p id="message" class="message"></p>
+        </form>
+        <a href="FP.html">Back to Forgot Password</a><br>
+        <a href="index.html">Back to Home</a>
+    </div>
+    <script>
+        document.getElementById('reset-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const token = document.getElementById('token').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const messageElement = document.getElementById('message');
+
+            try {
+                const response = await fetch('http://localhost:3001/api/v1/auth/reset-password', { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token, newPassword })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    messageElement.style.color = '#28a745'; // Green for success
+                    messageElement.textContent = 'Password reset successfully';
+                } else {
+                    messageElement.style.color = '#d9534f'; // Red for error
+                    messageElement.textContent = data.message || 'An error occurred';
+                }
+            } catch (error) {
+                messageElement.style.color = '#d9534f'; // Red for error
+                messageElement.textContent = 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

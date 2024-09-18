@@ -44,6 +44,10 @@ const instructorSchema = new Schema({
     createdAt: {
         type: Date,
         defualt: Date.now,
+    },
+    role:{
+        type: String,
+        default: "instructor",
     }
 });
 
