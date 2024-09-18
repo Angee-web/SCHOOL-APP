@@ -102,7 +102,7 @@ exports.login = async (req, res) => {
           role: "student",
         },
         process.env.SECRET_KEY,
-        { expiresIn: "10m" }
+        { expiresIn: "5m" }
       );
 
       res.status(200).json({
